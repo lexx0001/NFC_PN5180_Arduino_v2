@@ -137,6 +137,7 @@ public:
   void showIRQStatus(uint32_t irqStatus);
   PN5180TransceiveStat getTransceiveState();
   bool transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_t *recvBuffer = 0, size_t recvBufferLen = 0);
+  bool PN5180_Start();
   /*
    * Private methods, called within an SPI transaction
    */

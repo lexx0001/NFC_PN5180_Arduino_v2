@@ -41,6 +41,7 @@
 #define DEBUG
 
 uint8_t PN5180::readBuffer[508];
+uint8_t productVersion[2];
 
 PN5180::PN5180(uint8_t SSpin, uint8_t BUSYpin, uint8_t RSTpin) {
   PN5180_NSS = SSpin;
@@ -227,7 +228,7 @@ bool PN5180::readEEprom(uint8_t addr, uint8_t *buffer, int len) {
   PN5180DEBUG(len);
   PN5180DEBUG(F("...\n"));
 
-  uint8_t cmd[3] = { PN5180_READ_EEPROM, addr, len };
+  uint8_t cmd[3] = { PN5180_READ_EEPROM, addr, static_cast<uint8_t>(len) };
 
   SPI.beginTransaction(PN5180_SPI_SETTINGS);
   transceiveCommand(cmd, 3, buffer, len);
@@ -698,4 +699,56 @@ uint8_t PN5180::readRFResponse(uint8_t* buffer, uint8_t maxLen) {
     SPI.endTransaction();
 
     return ok ? len : 0;
+}
+
+
+// Function to start the PN5180 
+bool PN5180::PN5180_Start()
+{
+  // digitalWrite(PIN_TRIGGER, LOW); // Выключаем питание PN5180
+  Serial.println(F("================================================"));
+  Serial.println(F("Uploaded: " __DATE__ " " __TIME__));
+  Serial.println(F("PN5180 ISO14443 Sketch for Mifare Ultralight EV1 and APDU"));
+
+  Serial.println(F("------------------------------------------------"));
+  begin();
+  Serial.println(F("PN5180 Hard-Reset..."));
+  reset();
+  Serial.println(F("------------------------------------------------"));
+  Serial.println(F("Reading PN5180 version..."));
+  readEEprom(PRODUCT_VERSION, productVersion, sizeof(productVersion));
+  Serial.print(F("PN5180 version="));
+  Serial.print(productVersion[1]);
+  Serial.print(".");
+  Serial.println(productVersion[0]);
+
+  if (productVersion[1] != 4)
+  { // if product version is not 4, the initialization failed
+
+    return false; // return error
+  }
+
+  Serial.println(F("------------------------------------------------"));
+  Serial.println(F("Reading firmware PN5180 version..."));
+  uint8_t firmwareVersion[2];
+  readEEprom(FIRMWARE_VERSION, firmwareVersion, sizeof(firmwareVersion));
+  Serial.print(F("Firmware PN5180 version="));
+  Serial.print(firmwareVersion[1]);
+  Serial.print(".");
+  Serial.println(firmwareVersion[0]);
+
+  Serial.println(F("------------------------------------------------"));
+  Serial.println(F("Reading EEPROM PN5180 version..."));
+  uint8_t eepromVersion[2];
+  readEEprom(EEPROM_VERSION, eepromVersion, sizeof(eepromVersion));
+  Serial.print(F("EEPROM PN5180 version="));
+  Serial.print(eepromVersion[1]);
+  Serial.print(".");
+  Serial.println(eepromVersion[0]);
+
+  Serial.println(F("------------------------------------------------"));
+  Serial.println(F("Enable RF field..."));
+  // nfc.setupRF();
+
+  return true;
 }
