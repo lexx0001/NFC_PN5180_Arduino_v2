@@ -378,11 +378,6 @@ uint8_t PN5180ISO14443::readCard_UL_EV1(uint8_t *buffer)
 	return uidLength;
 }
 
-bool PN5180ISO14443::isCardPresent()
-{
-	uint8_t buffer[10];
-	return (readCardSerial(buffer) >= 4);
-}
 
 /*
  * Выполняет команду GET_VERSION (0x60) для карты MIFARE Ultralight EV1.

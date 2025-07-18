@@ -61,17 +61,8 @@ void loop()
 {
   if (errorFlag)
   {
-    irqStatus = nfc.getIRQStatus();
-    nfc.showIRQStatus(irqStatus);
-
-    if (0 == (RX_SOF_DET_IRQ_STAT & irqStatus))
-    {
-      Serial.println(F("*** ERROR! So many cards in RF field, maybe? ***"));
-    }
-
     nfc.reset();
     nfc.setupRF();
-
     errorFlag = false;
     delay(10);
   }
@@ -79,25 +70,20 @@ void loop()
   Serial.println(F("------------------------------------------------"));
   Serial.print(F("Loop #"));
   Serial.println(loopCnt++);
-  if (!nfc.isCardPresent())
+  
+  irqStatus = nfc.getIRQStatus();
+  nfc.showIRQStatus(irqStatus);
+
+  if (irqStatus != 0x24007 && irqStatus != 0)
   {
-    Serial.println(F("no card found"));
-
-    irqStatus = nfc.getIRQStatus();
-    nfc.showIRQStatus(irqStatus);
-
-    if (irqStatus != 0x24007)
-    {
-      Serial.println(F("Error: Unexpected IRQ status (not 0x24007)"));
+      Serial.println(F("Error: Unexpected IRQ status (not 0x24007 or 0)"));
       errorFlag = true;
-    }
-
-    delay(1000);
-    return;
+      delay(1000);
+      return;
   }
 
   printCardSerial_ATQA_SAK();
-  delay(2500); // wait a second before next loop
+  delay(1000); // wait a second before next loop
 }
 
 // Print card serial number, ATQA and SAK
