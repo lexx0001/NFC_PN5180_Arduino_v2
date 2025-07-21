@@ -45,7 +45,8 @@ public:
 public:
   bool setupRF();
   uint8_t readCardSerial(uint8_t *buffer);
-  uint8_t readCard_UL_EV1(uint8_t *buffer);
+  uint8_t cardRead(uint8_t *buffer);
+  uint8_t cardDetect(uint8_t *buffer);
   bool mifare_UL_EV1_GetVersion(uint8_t *versionBuffer);
   bool mifare_UL_EV1_ReadSig(uint8_t *sigBuffer);
   bool mifare_UL_EV1_PwdAuth(uint8_t *pwd, uint8_t *pack);

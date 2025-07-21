@@ -40,7 +40,6 @@
 #define TEMP_CONTROL (0x25)
 #define AGC_REF_CONFIG (0x26)
 #define PN5180_COMMAND 0x00 // 0x00 is the command register, used for direct commands
-// #define PN5180_RX_LENGTH 0x24
 
 
 // PN5180 EEPROM Addresses
@@ -141,7 +140,7 @@ public:
   /*
    * Private methods, called within an SPI transaction
    */
-private:
+  private:
  
 };
 

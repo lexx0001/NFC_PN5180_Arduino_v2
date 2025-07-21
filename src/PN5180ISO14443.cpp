@@ -292,7 +292,7 @@ uint8_t PN5180ISO14443::readCardSerial(uint8_t *buffer)
 	return uidLength;
 }
 
-uint8_t PN5180ISO14443::readCard_UL_EV1(uint8_t *buffer)
+uint8_t PN5180ISO14443::cardRead(uint8_t *buffer)
 {
 	uint8_t response[10];
 	uint8_t uidLength;
@@ -373,12 +373,44 @@ uint8_t PN5180ISO14443::readCard_UL_EV1(uint8_t *buffer)
 	// Читаем блок
 	uint8_t blockData[16];
 	mifareBlockRead(0x0F, blockData);
+	
+	// Проверка на SAK == 0x20, если так — вызываем sendRATS()
+	if (response[2] == 0x20)
+	{
+		Serial.println(F("SAK == 0x20, отправка RATS..."));
+		sendRATS();
+	}
 
 	mifareHalt();
 	return uidLength;
 }
 
+uint8_t PN5180ISO14443::cardDetect(uint8_t *buffer)
+{
+	uint8_t response[10];
+	uint8_t uidLength;
+	// Всегда возвращаем 10 байт
+	// Смещение 0..1 — ATQA
+	// Смещение 2 — SAK.
+	// UID 4 байта: смещение 3–6 — UID, смещение 7–9 — нули
+	// UID 7 байт: смещение 3–9 — UID
+	for (int i = 0; i < 10; i++)
+		response[i] = 0;
+	uidLength = activateTypeA(response, 1);
+	if ((response[0] == 0xFF) && (response[1] == 0xFF))
+		return 0;
+	// проверяем валидность uid
+	if ((response[3] == 0x00) && (response[4] == 0x00) && (response[5] == 0x00) && (response[6] == 0x00))
+		return 0;
+	if ((response[3] == 0xFF) && (response[4] == 0xFF) && (response[5] == 0xFF) && (response[6] == 0xFF))
+		return 0;
+	for (int i = 0; i < 10; i++)
+	{
+		buffer[i] = response[i];
+	}
 
+	return uidLength;
+}
 /*
  * Выполняет команду GET_VERSION (0x60) для карты MIFARE Ultralight EV1.
  *

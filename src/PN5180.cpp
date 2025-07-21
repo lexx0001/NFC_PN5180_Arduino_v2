@@ -561,7 +561,7 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
 
 
 void PN5180::reset() {
-  Serial.println(F("Reset PN5180..."));
+  // Serial.println(F("Reset PN5180..."));
   digitalWrite(PN5180_RST, LOW);  // требуется не менее 10 мкс
   delay(20);
   digitalWrite(PN5180_RST, HIGH); // требуется 2 мс для запуска
