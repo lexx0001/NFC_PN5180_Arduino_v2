@@ -565,7 +565,7 @@ void PN5180::reset() {
   digitalWrite(PN5180_RST, LOW);  // требуется не менее 10 мкс
   delay(20);
   digitalWrite(PN5180_RST, HIGH); // требуется 2 мс для запуска
-  delay(10);
+  delay(4);
 
   while (0 == (IDLE_IRQ_STAT & getIRQStatus())); // ждать запуска системы
 

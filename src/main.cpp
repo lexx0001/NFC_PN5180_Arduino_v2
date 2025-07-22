@@ -77,7 +77,7 @@ void loop()
   }
 
   printCardWorkInfo();
-  delay(100); // wait a second before next loop
+  delay(2);
 }
 
 // Print card serial number, ATQA and SAK
@@ -118,12 +118,12 @@ void printCardWorkInfo()
   // --- Обработка в зависимости от SAK ---
   if (buffer[2] == 0x20)
   {
-    Serial.println(F("SAK == 0x20, карта поддерживает APDU. Отправляем RATS..."));
+    Serial.println(F("SAK == 0x20, карта поддерживает APDU."));
     nfc.sendRATS();
   }
   else
   {
-    Serial.println(F("Это не APDU карта. Проверка на mifare_UL_EV1..."));
+    // Serial.println(F("Это не APDU карта. Проверка на mifare_UL_EV1..."));
 
     // Проверка на mifare_UL_EV1 48 кБ. UID длина 7 байт, SAK = 0x00, ATQA = 0x0044
     if (uidLength == 7 && buffer[2] == 0x00 && buffer[0] == 0x44 && buffer[1] == 0x00)
@@ -133,9 +133,9 @@ void printCardWorkInfo()
     else
     {
       Serial.println(F("Это не mifare_UL_EV1 по ATQA/SAK."));
-      delay(1500);
       nfc.mifareHalt();
       Serial.println(F("------------------------------------------------"));
+      delay(1300);
       return;
     }
 
@@ -161,5 +161,5 @@ void printCardWorkInfo()
   // Завершаем сессию
   nfc.mifareHalt();
   Serial.println(F("------------------------------------------------"));
-  delay(1500);
+  delay(1300);
 }

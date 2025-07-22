@@ -373,7 +373,7 @@ uint8_t PN5180ISO14443::cardRead(uint8_t *buffer)
 	// Читаем блок
 	uint8_t blockData[16];
 	mifareBlockRead(0x0F, blockData);
-	
+
 	// Проверка на SAK == 0x20, если так — вызываем sendRATS()
 	if (response[2] == 0x20)
 	{
@@ -587,7 +587,7 @@ void PN5180ISO14443::sendRATS()
 		return;
 	}
 
-	delay(3);
+	delay(4);
 	uint8_t ats[32];
 	uint8_t fwt_ats; // Таймаут ответа (Frame Waiting Time) из ATS
 	int len = rxBytesReceived();
@@ -611,16 +611,24 @@ void PN5180ISO14443::sendRATS()
 	}
 }
 
-// Отправляет команду SELECT AID для NFC Forum, учитывая FWI из ATS
+// Отправляет команду SELECT AID для NFC Forum
 void PN5180ISO14443::sendSelectAID(uint8_t fwt_ats)
 {
-	uint8_t selectNfcForum[] = {
-		0x00, 0xA4, 0x04, 0x00,
-		0x07, 0xD2, 0x76, 0x00,
-		0x00, 0x85, 0x01, 0x01,
-		0x00};
+	// uint8_t selectNfcForum[] = {
+	// 	0x00, 0xA4, 0x04, 0x00,
+	// 	0x07, 0xD2, 0x76, 0x00,
+	// 	0x00, 0x85, 0x01, 0x01,
+	// 	0x00};
 
-	// Формируем I-Block: PCB (0x02) + APDU
+	// Новый собственный AID — F0 12 34 56 78
+	uint8_t selectNfcForum[] = {
+		0x00, 0xA4, 0x04, 0x00,		  // SELECT by AID
+		0x05,						  // длина AID = 5 байт
+		0xF0, 0x12, 0x34, 0x56, 0x78, // AID: F0 12 34 56 78
+		0x00						  // Le = 0,  ожидаем ответа максимально возможной длины (256 байт)
+	};
+
+	// Формируем I-Block: PCB (0x02) + APDU. Важное замечание: каждый I-Block должен чередоваться, сначала 0х02, потом 0x03, потом опять 0х02 и так далее, иначе будем получать данные из кэша.
 	uint8_t iblock[1 + sizeof(selectNfcForum)];
 	iblock[0] = 0x02; // PCB для I-Block
 	memcpy(&iblock[1], selectNfcForum, sizeof(selectNfcForum));
@@ -652,15 +660,15 @@ void PN5180ISO14443::sendSelectAID(uint8_t fwt_ats)
 	if (len > 0 && static_cast<size_t>(len) <= sizeof(response))
 	{
 		readData(len, response);
-		if (response[0] != 0x02) // Проверяем PCB, должен быть I-Block
-		{
-			Serial.print(F("Ожидали I-Block (PCB 0x02), получили: "));
-			Serial.println(response[0], HEX);
-			return;
-		}
+		// if (response[0] != 0x02) // Проверяем PCB, должен быть I-Block
+		// {
+		// 	Serial.print(F("Ожидали I-Block (PCB 0x02), получили: "));
+		// 	Serial.println(response[0], HEX);
+		// 	// return;
+		// }
 
 		Serial.print(F("Ответ на SELECT AID: "));
-		for (int i = 1; i < len; i++)
+		for (int i = 0; i < len; i++)
 		{
 			if (response[i] < 0x10)
 				Serial.print("0");
