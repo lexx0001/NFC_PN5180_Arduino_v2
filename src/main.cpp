@@ -135,7 +135,7 @@ void printCardWorkInfo()
       Serial.println(F("Это не mifare_UL_EV1 по ATQA/SAK."));
       nfc.mifareHalt();
       Serial.println(F("------------------------------------------------"));
-      delay(1300);
+      delay(1000);
       return;
     }
 
@@ -146,6 +146,23 @@ void printCardWorkInfo()
       if (versionData[2] == 0x03 && versionData[4] == 0x01 && versionData[6] == 0x0B)
       {
         Serial.println(F("Подтверждена mifare_UL_EV1 48 кБ по версии!"));
+        // Аутентификация PWD_AUTH
+        // uint8_t password[4] = {0xD1, 0xF7, 0x34, 0x85}; //  твой пароль
+        uint8_t password[4] = {0xFF, 0xFF, 0xFF, 0xFF}; //  пароль по умолчанию
+        uint8_t pack_read[2];
+
+        if (nfc.mifare_UL_EV1_PwdAuth(password, pack_read))
+        {
+          Serial.print(F("Аутентификация прошла успешно! PACK: "));
+          Serial.print(pack_read[0], HEX);
+          Serial.print(":");
+          Serial.println(pack_read[1], HEX);
+        }
+        else
+        {
+          Serial.println(F("Аутентификация не удалась."));
+          return;
+        }
       }
       else
       {

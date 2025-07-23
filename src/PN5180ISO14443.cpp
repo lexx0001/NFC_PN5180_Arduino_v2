@@ -580,34 +580,34 @@ void PN5180ISO14443::sendRATS()
 {
 	uint8_t rats[] = {0xE0, 0x80}; // RATS: FSDI=8, CID=0
 
-	Serial.println(F("Отправляем RATS..."));
-	if (!sendData(rats, sizeof(rats), 0))
-	{
-		Serial.println(F("Ошибка при отправке RATS"));
+		Serial.println(F("Отправляем RATS..."));
+		if (!sendData(rats, sizeof(rats), 0))
+		{
+			Serial.println(F("Ошибка при отправке RATS"));
 		return;
-	}
+		}
 
 	delay(4);
 	uint8_t ats[32];
 	uint8_t fwt_ats; // Таймаут ответа (Frame Waiting Time) из ATS
-	int len = rxBytesReceived();
+		int len = rxBytesReceived();
 	if (len > 0 && static_cast<size_t>(len) <= sizeof(ats))
-	{
-		readData(len, ats);
-		fwt_ats = ats[3]; // Получаем FWT из ATS, 4-й байт (индекс 3)
-		Serial.print(F("ATS: "));
-		for (int i = 0; i < len; i++)
 		{
-			Serial.print(ats[i], HEX);
-			Serial.print(" ");
-		}
-		Serial.println();
-		delay(3);
+			readData(len, ats);
+			fwt_ats = ats[3]; // Получаем FWT из ATS, 4-й байт (индекс 3)
+			Serial.print(F("ATS: "));
+			for (int i = 0; i < len; i++)
+			{
+				Serial.print(ats[i], HEX);
+				Serial.print(" ");
+			}
+			Serial.println();
+		// delay(3);
 		sendSelectAID(fwt_ats);
-	}
-	else
-	{
-		Serial.println(F("Не получили ATS или ошибка чтения"));
+		}
+		else
+		{
+			Serial.println(F("Не получили ATS или ошибка чтения"));
 	}
 }
 
