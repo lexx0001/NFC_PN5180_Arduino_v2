@@ -52,6 +52,8 @@ public:
   bool mifare_UL_EV1_PwdAuth(uint8_t *pwd, uint8_t *pack);
   void sendRATS();
   void sendSelectAID(uint8_t fwt_ats);
+  bool sendWaitAWhile(uint8_t *response, size_t len);
+
 };
 
 #endif /* PN5180ISO14443_H */

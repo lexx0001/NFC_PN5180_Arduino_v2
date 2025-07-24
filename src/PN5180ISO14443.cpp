@@ -578,36 +578,36 @@ bool PN5180ISO14443::mifare_UL_EV1_PwdAuth(uint8_t *pwd, uint8_t *pack)
 
 void PN5180ISO14443::sendRATS()
 {
-	uint8_t rats[] = {0xE0, 0x80}; // RATS: FSDI=8, CID=0
+	uint8_t rats[] = {0xE0, 0x50}; // RATS: FSDI=8, CID=0; FSDI=8 - максимальный запрашиваемый ответ от карты - 256 байт, 5 это 64 байта
 
-		Serial.println(F("Отправляем RATS..."));
-		if (!sendData(rats, sizeof(rats), 0))
-		{
-			Serial.println(F("Ошибка при отправке RATS"));
+	Serial.println(F("Отправляем RATS..."));
+	if (!sendData(rats, sizeof(rats), 0))
+	{
+		Serial.println(F("Ошибка при отправке RATS"));
 		return;
-		}
+	}
 
 	delay(4);
 	uint8_t ats[32];
 	uint8_t fwt_ats; // Таймаут ответа (Frame Waiting Time) из ATS
-		int len = rxBytesReceived();
+	int len = rxBytesReceived();
 	if (len > 0 && static_cast<size_t>(len) <= sizeof(ats))
+	{
+		readData(len, ats);
+		fwt_ats = ats[3]; // Получаем FWT из ATS, 4-й байт (индекс 3)
+		Serial.print(F("ATS: "));
+		for (int i = 0; i < len; i++)
 		{
-			readData(len, ats);
-			fwt_ats = ats[3]; // Получаем FWT из ATS, 4-й байт (индекс 3)
-			Serial.print(F("ATS: "));
-			for (int i = 0; i < len; i++)
-			{
-				Serial.print(ats[i], HEX);
-				Serial.print(" ");
-			}
-			Serial.println();
+			Serial.print(ats[i], HEX);
+			Serial.print(" ");
+		}
+		Serial.println();
 		// delay(3);
 		sendSelectAID(fwt_ats);
-		}
-		else
-		{
-			Serial.println(F("Не получили ATS или ошибка чтения"));
+	}
+	else
+	{
+		Serial.println(F("Не получили ATS или ошибка чтения"));
 	}
 }
 
@@ -654,18 +654,12 @@ void PN5180ISO14443::sendSelectAID(uint8_t fwt_ats)
 	uint32_t start = millis();
 	while ((len = rxBytesReceived()) == 0 && (millis() - start) < FWT_ms)
 	{
-		delay(20);
+		delay(5);
 	}
 
 	if (len > 0 && static_cast<size_t>(len) <= sizeof(response))
 	{
 		readData(len, response);
-		// if (response[0] != 0x02) // Проверяем PCB, должен быть I-Block
-		// {
-		// 	Serial.print(F("Ожидали I-Block (PCB 0x02), получили: "));
-		// 	Serial.println(response[0], HEX);
-		// 	// return;
-		// }
 
 		Serial.print(F("Ответ на SELECT AID: "));
 		for (int i = 0; i < len; i++)
@@ -680,10 +674,89 @@ void PN5180ISO14443::sendSelectAID(uint8_t fwt_ats)
 		if (len >= 3 && response[len - 2] == 0x6A && response[len - 1] == 0x82)
 		{
 			Serial.println(F("разблокируйте телефон"));
+			return;
 		}
+
+		// Проверка: если первый байт ответа F2
+		if (len >= 1 && response[0] == 0xF2)
+		{
+			Serial.println(F("Ответ карты F2 отправлен обратно."));
+			if (!sendWaitAWhile(response, len)) {
+				return; 
+			}
+		}
+
 	}
 	else
 	{
 		Serial.println(F("Не получили ответ на SELECT AID"));
 	}
+	return;
+
 }
+
+
+// Обработка ответа карты F2 (F2 означает: Повторите попытку позже, мне нужно больше времени, чтобы ответить)
+
+bool PN5180ISO14443::sendWaitAWhile(uint8_t* response, size_t len)
+{
+    uint8_t reply[32];
+    int replyLen = 0;
+    uint32_t timeout = 350; // мс, можно увеличить при необходимости
+    int attempts = 0;
+
+    while (attempts < 3)
+    {
+        // Отправляем полученный ответ обратно на карту
+        if (!sendData(response, len, 0))
+        {
+            Serial.println(F("Ошибка при отправке ответа карты обратно F2"));
+            return false;
+        }
+
+        // Ждём новый ответ от карты
+        replyLen = 0;
+        uint32_t start = millis();
+        while ((replyLen = rxBytesReceived()) == 0 && (millis() - start) < timeout)
+        {
+            delay(5);
+        }
+
+        if (replyLen > 0 && static_cast<size_t>(replyLen) <= sizeof(reply))
+        {
+            readData(replyLen, reply);
+            Serial.print(F("Ответ карты на F2: "));
+            for (int i = 0; i < replyLen; i++)
+            {
+                if (reply[i] < 0x10)
+                    Serial.print("0");
+                Serial.print(reply[i], HEX);
+                Serial.print(" ");
+            }
+            Serial.println();
+
+            // Если первый байт снова F2, повторяем, иначе выходим
+            if (reply[0] == 0xF2)
+            {
+                attempts++;
+                memcpy(response, reply, replyLen);
+                len = replyLen;
+                continue;
+            }
+            else
+            {
+                // Получен нормальный ответ, выходим
+                return true;
+            }
+        }
+        else
+        {
+            Serial.println(F("Нет ответа на F2"));
+            return false;
+        }
+    }
+    // Если три попытки не дали результата
+    return false;
+}
+
+

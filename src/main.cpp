@@ -123,16 +123,16 @@ void printCardWorkInfo()
   }
   else
   {
-    // Serial.println(F("Это не APDU карта. Проверка на mifare_UL_EV1..."));
+    Serial.println(F("Это не APDU карта."));
 
     // Проверка на mifare_UL_EV1 48 кБ. UID длина 7 байт, SAK = 0x00, ATQA = 0x0044
     if (uidLength == 7 && buffer[2] == 0x00 && buffer[0] == 0x44 && buffer[1] == 0x00)
     {
-      Serial.println(F("Обнаружена mifare_UL_EV1 48 кБ!"));
+      Serial.println(F("Обнаружена mifare_UL_EV1 48 кБ."));
     }
     else
     {
-      Serial.println(F("Это не mifare_UL_EV1 по ATQA/SAK."));
+      Serial.println(F("Это не mifare UL EV1."));
       nfc.mifareHalt();
       Serial.println(F("------------------------------------------------"));
       delay(1000);
@@ -145,7 +145,7 @@ void printCardWorkInfo()
       // Проверяем, что это MIFARE Ultralight EV1 48 байт
       if (versionData[2] == 0x03 && versionData[4] == 0x01 && versionData[6] == 0x0B)
       {
-        Serial.println(F("Подтверждена mifare_UL_EV1 48 кБ по версии!"));
+        Serial.println(F("Подтверждена mifare_UL_EV1 48 кБ."));
         // Аутентификация PWD_AUTH
         // uint8_t password[4] = {0xD1, 0xF7, 0x34, 0x85}; //  твой пароль
         uint8_t password[4] = {0xFF, 0xFF, 0xFF, 0xFF}; //  пароль по умолчанию
@@ -153,7 +153,7 @@ void printCardWorkInfo()
 
         if (nfc.mifare_UL_EV1_PwdAuth(password, pack_read))
         {
-          Serial.print(F("Аутентификация прошла успешно! PACK: "));
+          Serial.print(F("Аутентификация - успешно! PACK: "));
           Serial.print(pack_read[0], HEX);
           Serial.print(":");
           Serial.println(pack_read[1], HEX);
@@ -171,12 +171,12 @@ void printCardWorkInfo()
     }
     else
     {
-      Serial.println(F("Не удалось получить версию метки"));
+      Serial.println(F("Не удалось получить версию чипа"));
     }
   }
 
   // Завершаем сессию
   nfc.mifareHalt();
   Serial.println(F("------------------------------------------------"));
-  delay(1300);
+  delay(950);
 }
